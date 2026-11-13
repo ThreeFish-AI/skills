@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "向 Git 提交工作区变更并推送：先 git pull 同步当前分支，再按内容类别分批、以「type(Topic): 中文摘要;」格式提交，最后 git push。用户要求提交、commit、提交并推送，或任务进入可提交阶段时使用。不用于创建 PR（用 pr-feature）、改写已有提交（amend、rebase、force-push）或直接向 master/main 推送。Use when asked to commit and push changes."
+description: "向 Git 提交工作区变更并推送：先 git pull 同步当前分支，再按内容类别分批、以「type(Topic): 中文摘要;」格式提交，最后 git push（用户明确要求不推送时只提交）。用户要求提交、commit、提交并推送，或任务进入可提交阶段时使用。不用于创建 PR（用 pr-feature）、改写已有提交（amend、rebase、force-push）或直接向 master/main 推送。Use when asked to commit and push changes, or to commit without pushing."
 license: MIT
 compatibility: 适用于 Claude Code、Codex、Antigravity 等支持 Agent Skills 的宿主；需 git，且当前目录是已配置 origin 的 Git 仓库。
 ---
@@ -21,6 +21,8 @@ compatibility: 适用于 Claude Code、Codex、Antigravity 等支持 Agent Skill
    当前分支还没有远程分支（提示无 tracking 信息）时跳过这一步。`git pull` 中止或有冲突时，停止并报告现场（冲突文件与双方改动），不要 stash、reset 或擅自覆盖；若原因是未提交的本地改动与上游改动重叠，可在征得用户同意后先提交本地变更，再 `git pull --no-rebase` 合并上游。
 3. 按合理的批次与准备好的 Commit Message 提交变更。暂存时按路径显式添加要提交的文件，不用 `git add -A` 或 `git add .`。
 4. 执行 `git push` 把当前分支推送到 GitHub 远程仓库；分支还没有上游时用 `git push -u origin <当前分支>`。推送被拒时停止并报告，不要 force-push。
+
+用户明确要求只提交、不推送（如「只 commit，不 push」）时，执行上面第 1 到 3 步，跳过第 4 步。
 
 ## 注意事项
 
@@ -61,4 +63,18 @@ compatibility: 适用于 Claude Code、Codex、Antigravity 等支持 Agent Skill
 
 ```
 ci(Jenkins): 修改配置文件以支持 staging 环境;
+```
+
+## Merge Commit 信息
+
+merge commit 的信息固定写成下面的格式，同样附上上文的签名：
+
+```
+chore(Merge): 合并 {source-branch} 分支;
+```
+
+示例：
+
+```
+chore(Merge): 合并 feature/user-auth 分支;
 ```
