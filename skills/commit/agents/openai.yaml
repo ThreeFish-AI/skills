@@ -1,0 +1,4 @@
+interface:
+  display_name: "commit"
+  short_description: "向 Git 提交变更：先 pull，分批以规范 Commit Message 提交，再 push"
+  default_prompt: "使用 $commit 提交当前工作区的变更：先 git pull，按内容类别分批、以「type(Topic): 中文摘要;」格式提交，最后 git push。"

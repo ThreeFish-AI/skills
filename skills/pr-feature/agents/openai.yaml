@@ -1,0 +1,6 @@
+interface:
+  display_name: "pr-feature"
+  short_description: "基于 origin/feature/1.x.x 创建新 PR 并处理冲突，标题与正文用中文"
+  default_prompt: "使用 $pr-feature 为当前分支基于 origin/feature/1.x.x 创建新 PR：处理与基线的冲突，PR 标题与正文使用中文，创建后在 Orca 环境内挂载到 workspace。"
+policy:
+  allow_implicit_invocation: false
