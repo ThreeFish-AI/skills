@@ -17,8 +17,14 @@ check() { # check <描述> <命令...>：命令成功即通过
 }
 linked() { [ -L "$1" ] && [ -f "$1/SKILL.md" ]; }
 new_home() { mkdir -p "$TMP/$1"; echo "$TMP/$1"; }
+# 固定 PATH，只放 install.sh 用到的几个工具，避免本机真实的 gemini 命令影响探测；run_gemini 额外放一个假的 gemini
+TOOLS="$TMP/tools"; mkdir -p "$TOOLS"
+for t in dirname basename readlink mkdir ln; do ln -s "$(command -v "$t")" "$TOOLS/$t"; done
+GEMINI_BIN="$TMP/gemini-bin"; mkdir -p "$GEMINI_BIN"
+printf '#!/bin/sh\nexit 0\n' > "$GEMINI_BIN/gemini"; chmod +x "$GEMINI_BIN/gemini"
 # 在给定 HOME 下运行 install.sh，并清掉外部可能带入的目标覆盖
-run() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" "$INSTALL" "$@"; }
+run() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$TOOLS" "$BASH" "$INSTALL" "$@"; }
+run_gemini() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$GEMINI_BIN:$TOOLS" "$BASH" "$INSTALL" "$@"; }
 
 skills=()
 for f in "$ROOT"/skills/*/SKILL.md; do skills+=("$(basename "$(dirname "$f")")"); done
@@ -31,7 +37,7 @@ check "只装 Claude Code: 退出码 0" test "$rc" -eq 0
 for n in "${skills[@]}"; do check "只装 Claude Code: $n 已链接" linked "$H/.claude/skills/$n"; done
 check "只装 Claude Code: 未创建 .agents" test ! -e "$H/.agents"
 check "只装 Claude Code: 未创建 .gemini" test ! -e "$H/.gemini"
-check "只装 Claude Code: 报告跳过 Codex 与 Antigravity" bash -c 'echo "$1" | grep -q "skip      Codex" && echo "$1" | grep -q "skip      Antigravity"' _ "$out"
+check "只装 Claude Code: 报告跳过 Codex、Antigravity 与 Gemini CLI" bash -c 'echo "$1" | grep -q "skip      Codex" && echo "$1" | grep -q "skip      Antigravity" && echo "$1" | grep -q "skip      Gemini CLI"' _ "$out"
 
 # 2. 三者都装：各链到自己的目录；Codex 走 ~/.agents/skills，不建 ~/.codex/skills
 H="$(new_home all-agents)"; mkdir -p "$H/.claude" "$H/.codex" "$H/.gemini/config"
@@ -43,8 +49,27 @@ for n in "${skills[@]}"; do
   check "全装: $n 链入 .gemini/config/skills" linked "$H/.gemini/config/skills/$n"
 done
 check "全装: 未创建 .codex/skills" test ! -e "$H/.codex/skills"
+check "全装: PATH 上没有 gemini 时未创建 .gemini/skills" test ! -e "$H/.gemini/skills"
 
-# 3. 幂等：重跑退出码 0 且不再新建链接
+# 2b. gemini 命令在 PATH 上：补链到 ~/.gemini/skills；与 Antigravity 并存时两处都链
+H="$(new_home gemini-cli)"; mkdir -p "$H/.gemini/config"
+rc=0; out="$(run_gemini "$H" 2>&1)" || rc=$?
+check "Gemini CLI: 退出码 0" test "$rc" -eq 0
+for n in "${skills[@]}"; do
+  check "Gemini CLI: $n 链入 .gemini/skills" linked "$H/.gemini/skills/$n"
+  check "Gemini CLI: $n 与 Antigravity 并存时仍链入 .gemini/config/skills" linked "$H/.gemini/config/skills/$n"
+done
+check "Gemini CLI: 未创建 .claude" test ! -e "$H/.claude"
+
+# 2c. 只有 gemini 命令：只链 ~/.gemini/skills
+H="$(new_home gemini-only)"
+rc=0; out="$(run_gemini "$H" 2>&1)" || rc=$?
+check "只有 gemini 命令: 退出码 0" test "$rc" -eq 0
+check "只有 gemini 命令: 链入 .gemini/skills" linked "$H/.gemini/skills/$first"
+check "只有 gemini 命令: 未创建 .gemini/config" test ! -e "$H/.gemini/config"
+
+# 3. 幂等：对第 2 步的全装环境重跑，退出码 0 且不再新建链接
+H="$TMP/all-agents"
 rc=0; out="$(run "$H" 2>&1)" || rc=$?
 check "幂等: 重跑退出码 0" test "$rc" -eq 0
 check "幂等: 重跑不再 linked" bash -c '! echo "$1" | grep -q "^linked"' _ "$out"

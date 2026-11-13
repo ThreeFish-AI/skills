@@ -2,10 +2,11 @@
 # 把 skills/* 以软链接装到本机已安装 Agent 的全局 skills 目录（幂等）。
 # 用法：scripts/install.sh [--check]
 #   --check  只核对不改动，有缺失或冲突时退出码为 1
-# 按 Agent 根目录是否存在探测已安装的 Agent，未安装的跳过，且不创建其目录：
+# 探测已安装的 Agent，未安装的跳过，且不创建其目录（Gemini CLI 看 gemini 命令是否在 PATH 上，其余看根目录是否存在）：
 #   Claude Code   ~/.claude                                  -> ~/.claude/skills
 #   Codex 与通用   ~/.codex 或 ~/.agents                      -> ~/.agents/skills
 #   Antigravity   ~/.gemini/antigravity 或 ~/.gemini/config   -> ~/.gemini/config/skills
+#   Gemini CLI    命令 gemini                                 -> ~/.gemini/skills
 # THREEFISH_SKILLS_TARGETS=dir1:dir2 可跳过探测，显式指定目标目录。
 # 只新建软链接，不覆盖也不删除已有的真实目录或指向别处的软链接，冲突时报告并跳过。
 set -euo pipefail
@@ -22,17 +23,21 @@ TARGETS=()
 if [ -n "${THREEFISH_SKILLS_TARGETS:-}" ]; then
   IFS=':' read -r -a TARGETS <<< "$THREEFISH_SKILLS_TARGETS"
 else
-  # 每项：标签|探测根目录（冒号分隔，任一存在即视为已安装）|skills 目录
+  # 每项：标签|探测项（冒号分隔，任一满足即视为已安装；cmd=<命令> 表示该命令在 PATH 上，其余是目录）|skills 目录
   for entry in \
     "Claude Code|$HOME/.claude|$HOME/.claude/skills" \
     "Codex/通用|$HOME/.codex:$HOME/.agents|$HOME/.agents/skills" \
-    "Antigravity|$HOME/.gemini/antigravity:$HOME/.gemini/config|$HOME/.gemini/config/skills"
+    "Antigravity|$HOME/.gemini/antigravity:$HOME/.gemini/config|$HOME/.gemini/config/skills" \
+    "Gemini CLI|cmd=gemini|$HOME/.gemini/skills"
   do
     IFS='|' read -r label roots dir <<< "$entry"
     IFS=':' read -r -a root_list <<< "$roots"
     found=0
     for root in "${root_list[@]}"; do
-      if [ -d "$root" ]; then found=1; fi
+      case "$root" in
+        cmd=*) if command -v "${root#cmd=}" >/dev/null 2>&1; then found=1; fi ;;
+        *) if [ -d "$root" ]; then found=1; fi ;;
+      esac
     done
     if [ "$found" -eq 1 ]; then
       TARGETS+=("$dir")
