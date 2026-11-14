@@ -11,6 +11,5 @@ guided-learn        ThreeFish-AI/guided-learn
 vibe-video          ThreeFish-AI/vibe-video
 vibe-tts            ThreeFish-AI/vibe-tts
 vibe-stock          ThreeFish-AI/vibe-stock
-preening-substrate  ThreeFish-AI/preening-substrate
 review-once         ThreeFish-AI/review-once
 rsi                 ThreeFish-AI/rsi

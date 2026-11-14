@@ -17,6 +17,11 @@
       "source": "./skills/pr-feature"
     },
     {
+      "name": "preening-substrate",
+      "description": "对目标代码模块或子系统执行「预检护栏 → 全面梳理 → 核心提炼 → 正交分解 → 代码清减与语义规范化 → 对抗核验与量化交付」的结构性重构与系统性熵减：先锚定测试基线与全局依赖拓扑，剥离偶然复杂性并识别正交变化维度（机制 vs. 策略），重塑深模块与单一事实源（SSOT），再激进剪除死代码、内联浅透传层、重铸精准领域命名（保留标准英文技术术语），最后由独立 Verifier Subagent 盲审行为等价性与二阶涟漪效应并交付量化报告。当用户要求「全面梳理并提炼核心、正交分解」「梳理 / 清减某个模块」「对 X 做正交分解」「消除死代码与过度抽象」「拍平透传层与浅模块」「规范化命名语义与职责边界」「执行结构性熵减」或由 negentropy 的 preening_substrate 预设按名调用时使用。Use when the user asks to refactor, decompose or prune a module, eliminate dead code, or flatten pass-through layers. 不用于全新业务特性开发、单点紧急 Bug 热修（Hotfix）、纯代码格式化或 Linter 自动修复、跨语言推倒重写、无源码黑盒调优，或仅需只读代码评审与架构答疑的场景。",
+      "source": "./skills/preening-substrate"
+    },
+    {
       "name": "guided-learn",
       "description": "通读论文（arXiv 等）、技术文档与设计规格、网页、视频或代码库等一手材料的全部内容（可由用户提供，或指名后自主定位），必要时自主补读其最新权威信源，再以自己的话写成外行也能一读就懂、一看就会、一听便知、一学就通的《精读与通俗拆解》：先梳理全貌再总结，讲透底层规律、权衡取舍与核心争议，用最小原型与破坏性实验验证机制，由内置外行读者代理 Subagent 验收、不达标即修文档，端到端自治交付；映射到用户代码库仅在明确要求时产出。当用户要求「带我精读论文/资料」「先梳理全貌不要急着总结」「提炼该领域核心规律与争议」「以老师身份带我掌握 X」「搞懂原理并动手做实验」时使用；即使未明说「精读」，只要用户提供或指名一手材料并希望深入掌握、接受考核或动手验证，也应使用。不用于快速摘要、TL;DR 或以 cheatsheet、对比表等汇总产物为目标的材料梳理、全文翻译、单点 API 查询、日常 Bug 排查与代码评审、无可定位一手信源的对话式概念讲解与事实核查，或把材料转成视频、skill 等其他产物。",
       "source": {
@@ -61,17 +66,6 @@
       ]
     },
     {
-      "name": "preening-substrate",
-      "description": "对目标代码模块或子系统执行「预检护栏 → 全面梳理 → 核心提炼 → 正交分解 → 代码清减与语义规范化 → 对抗核验与量化交付」的结构性重构与系统性熵减：先锚定测试基线与全局依赖拓扑，剥离偶然复杂性并识别正交变化维度（机制 vs. 策略），重塑深模块与单一事实源（SSOT），再激进剪除死代码、内联浅透传层、重铸精准领域命名（保留标准英文技术术语），最后由独立 Verifier Subagent 盲审行为等价性与二阶涟漪效应并交付量化报告。当用户要求「全面梳理并提炼核心、正交分解」「梳理 / 清减某个模块」「对 X 做正交分解」「消除死代码与过度抽象」「拍平透传层与浅模块」「规范化命名语义与职责边界」「执行结构性熵减」或由 negentropy 的 preening_substrate 预设按名调用时使用。Use when the user asks to refactor, decompose or prune a module, eliminate dead code, or flatten pass-through layers. 不用于全新业务特性开发、单点紧急 Bug 热修（Hotfix）、纯代码格式化或 Linter 自动修复、跨语言推倒重写、无源码黑盒调优，或仅需只读代码评审与架构答疑的场景。",
-      "source": {
-        "source": "github",
-        "repo": "ThreeFish-AI/preening-substrate"
-      },
-      "skills": [
-        "./"
-      ]
-    },
-    {
       "name": "review-once",
       "description": "Run this bounded, evidence-driven review-fix loop ONLY when the user explicitly invokes this skill — /review-once, $review-once, or names review-once as the tool to run (\"use review-once to review the changes\") — asks for an iterative review-fix loop (review, fix, review again until no clear defects remain), or files an RSI sedimentation request. Do NOT trigger for plain review requests — \"review this PR\", \"review the changes\", or a single \"review and fix\" with no iteration wording; handle those with a normal one-pass review (you may mention /review-once for the full loop). A bare mention in a question or complaint is not an invocation; plain-English \"review once\" (\"just review once and fix\") is not a name mention. Do not trigger for code explanations, test-only requests, security audits without an iteration loop, or release/merge automation. When triggered: read Review request.md as the standard, fix actionable findings, verify, and loop; prefer Conductor Diff/Comments tools, else git merge-base/diff.",
       "source": {
@@ -84,7 +78,7 @@
     },
     {
       "name": "rsi",
-      "description": "统一 RSI（Recursive Self-Improvement）经验沉淀回路：在使用 ThreeFish-AI 自研 skill 与规范体系（preening-substrate、guided-learn、vibe-video、vibe-tts、review-once、agents.md 协作规约、rsi 自身）的过程中，把发现的 Skill/规范自身缺陷或可沉淀的改进经验，经登记 ledger、隔离 clone、G0–G4 门禁核验后，以 PR 形式回流对应维护仓库，并在 PR 后自动做上下文审阅与摘要。当用户指出上述某个 skill 的缺陷或提出改进建议、要求把经验沉淀成 PR、登记 RSI 条目、走自改进回路，或 Agent 运行时发现门禁无法判定、规约自相矛盾、死链/锚点失效、模板缺位、宿主能力不符且无降级路径等运行时证据时使用。不用于目标业务仓库自身的代码缺陷（属作业对象）、一次性代码 review、一般 Git 操作，或与注册仓库无关的经验总结。",
+      "description": "统一 RSI（Recursive Self-Improvement）经验沉淀回路：在使用 ThreeFish-AI 自研 skill 与规范体系（preening-substrate、guided-learn、vibe-video、vibe-tts、vibe-stock、review-once、agents.md 协作规约、rsi 自身）的过程中，把发现的 Skill/规范自身缺陷或可沉淀的改进经验，经登记 ledger、隔离 clone、G0–G4 门禁核验后，以 PR 形式回流对应维护仓库，并在 PR 后自动做上下文审阅与摘要。当用户指出上述某个 skill 的缺陷或提出改进建议、要求把经验沉淀成 PR、登记 RSI 条目、走自改进回路，或 Agent 运行时发现门禁无法判定、规约自相矛盾、死链/锚点失效、模板缺位、宿主能力不符且无降级路径等运行时证据时使用。不用于目标业务仓库自身的代码缺陷（属作业对象）、一次性代码 review、一般 Git 操作，或与注册仓库无关的经验总结。",
       "source": {
         "source": "github",
         "repo": "ThreeFish-AI/rsi"

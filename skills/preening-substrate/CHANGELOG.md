@@ -1,0 +1,107 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [Unreleased]
+
+### Added
+
+- 宿主 Plan 模式（宿主强制只读）降级路径（RSI-20261107-02）：[SKILL.md](SKILL.md#边界与触发契约) 边界与触发契约补一段，用户未声明 Dry-Run 而宿主处于 Plan 模式时，Phase 0 → Phase 2 按 Dry-Run 零写入口径只读执行，产物暂存于宿主 plan 文件；获批退出即视为放行，不停机、不重跑 Phase 0 → Phase 2；进入 Phase 3 之前必须先落盘到 lab 目录并补齐测试护栏，未完成严禁修改业务代码（铁律 1、铁律 2 判据不变，仅落盘与实跑时点后移）。[context-and-audit §0](references/context-and-audit.md#0-落盘契约与上下文防腐) 新增第 4 条，给出暂存范围、补落盘顺序与锚点重核；SKILL.md Phase 0 段补指针。
+- evals 新增宿主 Plan 模式降级场景（RSI-20261107-03）：[evals/evals.json](evals/evals.json) 场景 8 覆盖「用户未声明 Dry-Run 而宿主处于 Plan 模式」分支，期望句逐条锚定 [SKILL.md](SKILL.md#边界与触发契约) 边界与触发契约与 [context-and-audit §0 第 4 条](references/context-and-audit.md#0-落盘契约与上下文防腐)：Phase 0 → Phase 2 按零写入口径只读执行、产物暂存宿主 plan 文件且门禁不勾选、获批退出即放行不停机不重跑、进入 Phase 3 前补落盘并补齐测试护栏、落盘时基线重采与锚点重核；[evals/trigger-evals.json](evals/trigger-evals.json) 不动（Plan 模式是宿主运行时状态，不改 `description` 路由结果，仅改执行口径）。
+
+### Changed
+
+- Gate 1 判据操作化（RSI-20261107-01）：[references/verification-and-delivery.md](references/verification-and-delivery.md) §2.2 明确「有效」= 被测对象仍存于工作区；Phase 3/4 合法清除的被测对象（符号、参数、僵尸分支、重复拷贝）所对应的测试删改，须逐条登记入 `baseline.md`「测试变更清单」（仅事实字段，无理由与结论栏，交接 Verifier 前剥除非 schema 文本），Verifier 先自 `git diff` 独立对账、把含断言语义的删除行逐一交叉核对已登记标识，再逐条复跑只读 `git grep` 证据命令（一律仓库根运行，以退出码判定：命中 rc=0、零命中 rc=1，fatal 不构成零命中），清单外删改与证据不成立的条目一律 `REJECT`；处置分重命名同步 / 对象清除 / 拷贝合并三类，对象清除类追加「定义所在 diff hunk 须为纯删除，伴随改名对即改按重命名同步复核」；行为契约兜底要求独立成立的部分断言移入存活测试并登记标识；§1.1 公开契约表注与 §2.1 Verifier 输入同步登记清单建立链路，SKILL.md Phase 5 步骤 2 ① 补同款指针；新增 IEEE [5][6]（测试套件最小化综述与最小化损害故障检出的实证研究，支撑删测须证等价覆盖），[6] 作者按 Crossref 勘误为 M. J. Harrold。
+- evals Gate 1 期望句随测试变更清单条件出口校准（RSI-20261107-04）：[evals/evals.json](evals/evals.json) 场景 1 第 5 条期望由「未删改或弱化任何既有业务测试断言」绝对禁令句校准为条件式——保留零删减零弱化主断言，确有删改须逐条登记入 `baseline.md`「测试变更清单」并经 Verifier 复核放行，清单外的删改一律判 `REJECT`，与 [verification-and-delivery §2.2](references/verification-and-delivery.md#22-四维盲审核查表-quad-gate-audit-checklist) Gate 1 判据及 SKILL.md Phase 5 步骤 2 ① 括注口径一致。
+
+### Fixed
+
+- README 安装节 Antigravity symlink 注记更正（RSI-20261114-01）：[README.md](README.md#安装) 原注称 Antigravity 不识别 symlink 安装的技能、建议改用克隆直装或 `npx skills add --copy`，与同节方式二（symlink 进 `~/.gemini/config/skills/`）自相矛盾，所引 [vercel-labs/skills#633](https://github.com/vercel-labs/skills/issues/633) 也已于 2026-11-06 关闭；改写为现行事实：Antigravity 识别 `~/.gemini/config/skills/` 下的 symlink 技能，#633 报告的不识别发生在旧路径 `~/.gemini/antigravity/skills/`，劝退建议删去。
+
+## [1.0.6] - 2026-10-14
+
+### Added
+
+- 分流矩阵补两条款（RSI-20261013-04）：「文档/规约为主的目标」以文档门（链接与锚点校验、行数预算、词表 ledger）替代特征化测试，度量把代码行与文档行分列且 LOC 优化率只对代码行计，冻结面文本一律绕行；「整仓多子目标」slug 仍取单一一名，交付报告核心结论逐一列出各子目标爆炸半径级别、量化表按子目标分列。
+- Gate 2 公开契约表回填链路（RSI-20261013-03）：[verification-and-delivery §1.1](references/verification-and-delivery.md#11-工作区初始化与基线采集) 声明 `baseline.md` 公开契约表 Phase 0 空节占位、Phase 1 完成时自 `topology-and-audit.md` 公开契约节回填，未回填时该节改入 Verifier 输入包（§2.1 第 5 项）作 Gate 2 替代对照基线；SKILL.md 不变量段「输入隔离」与盲审步骤补同一条件性例外，Phase 0/1 出闸表述同步，README Phase 1 验收标准同步。
+
+### Changed
+
+- 绿灯锚点改双档机制（RSI-20261013-01）：默认暂存区锚点（`git add --` 登记清单），仅当用户或目标仓允许 commit 时打 checkpoint；严禁 `git add -A` 混入 Phase 0 已登记的用户 WIP，红灯回退与补锚点措辞同步两档形态。
+- 三处回退白名单统一（RSI-20261013-02）：[orthogonal-refactoring §0](references/orthogonal-refactoring.md#0-重构步法总则双阶段帽子与两振出局回退) 为唯一权威，SKILL.md 铁律 7 压缩视图对齐——stash 改为唯一 tag 落栈 `push` / `apply --index` / `drop` 并严禁共享工作区裸 `pop`，补「删除微步新增文件仅限 `rm --` 登记精确路径（无递归）」，VD §1.1 的 `git stash create`（悬空提交不可取回）改为 `git stash push -m <唯一tag>` 留档并以 `git diff HEAD > wip-snapshot.patch` 为替代；微步动手前先把将触碰（含将新建）的文件登记进 `progress.md`，微步内发现新触碰点即时补登记。
+- 共享工作区并行防护（RSI-20261013-05）：OR §0 补条款——宿主 worktree 隔离未真正生效时，锚点与回退仅以本微步 `progress.md` 登记文件清单为操作面，各并行子代理文件清单互斥为并行推进前置条件。
+- SKILL.md frontmatter 版本升至 1.0.6。
+
+## [1.0.5] - 2026-10-14
+
+### Added
+
+- [references/orthogonal-refactoring.md](references/orthogonal-refactoring.md) §4 新增第 4 条「以清晰易读为清减准绳」：行数下降是清减的结果而非目标；严禁为压低行数把过多步骤折叠进单行，违者在 Gate 3 判 `REJECT`；是否折叠过头一律过「首读可复述 / 出错可定位 / 中间变量意图可见」三问，并明确删的是重复与噪音、不是信息。
+
+### Changed
+
+- [SKILL.md](SKILL.md) 铁律 8、[references/verification-and-delivery.md](references/verification-and-delivery.md) Gate 3 与 [references/plain-expression.md](references/plain-expression.md) §6「行数预算」各挂指针至新增准绳；行数预算补注「预算是上限，不是目标」，覆盖本 Skill 自身文本。
+
+## [1.0.4] - 2026-10-11
+
+### Changed
+
+- RSI 协议上收至统一仓库 [ThreeFish-AI/rsi](https://github.com/ThreeFish-AI/rsi)，本仓保留触发契约与不变量清单：[references/rsi-hook.md](references/rsi-hook.md) 整替为指针 stub，SKILL.md RSI 章节压缩为薄指针，捕获目录迁移至 `.temp/rsi/preening-substrate/`。
+
+## [1.0.3] - 2026-10-09
+
+### Added
+
+- 新增 [references/plain-expression.md](references/plain-expression.md)：本 Skill 文本表达质感 SSOT，涵盖读者四结果（ISO 24495-1）、§0「可懂性下限 + 表达力上限」双线划界（均为读者结果）、句构三律、术语治理与首用释义、双通道条目模板、改写筛选与四条禁则（禁则 3 重切营销腔边界：禁不可证伪断言，不禁可指认修辞）、表达力四维（具象优先 / 关系结构类比 / 节奏与压力位 / AI 腔防治）、外行盲评七问（先读后问防刷分）与改动验证四查，附 12 条 IEEE 参考文献。
+
+### Changed
+
+- [SKILL.md](SKILL.md) 叙述性文字改写：重构十铁律各附一句「人话」复述，易错点中「过程记录」「测试替身」两条同附（判定规则语义不变，不降级任何模态词；铁律 7 把原「分步执行」直接写成「严禁混在同一次修改里」，并把 Fowler 出处括注改为指向 [orthogonal-refactoring §0](references/orthogonal-refactoring.md#0-重构步法总则双阶段帽子与两振出局回退) 的指针）；开篇「唯一目标」段改写为结论先行的三步式并给「偶然复杂性」「低熵」补首用释义（原「认知演进法则」长句拆入三步，「正交内聚」由铁律 6 与 Phase 3 承载），铁律 1 给「熵增负债」补首用释义；分流矩阵、双代理核验与 Phase 0–2 各段先给一句问题陈述，Phase 3 开篇点明「只动结构」，Phase 5 开篇交代执行顺序；「边界与触发契约」拆为四段；SSOT 指针索引登记新手册，Phase 5 必读挂载扩至 §7；frontmatter 版本升至 1.0.3；README 仓库结构树新增 plain-expression 登记行、knowledge-map 登记行同步。标题零触碰，冻结面除 README 仓库结构树新增 1 行登记外零变动，非本规约文件净增 ≤ 60 行达标，16 词硬约束台账无 LOSS（SKILL.md「严禁」+1，见铁律 7）。
+
+## [1.0.2] - 2026-09-30
+
+### Added
+
+- **三层渐进式披露架构 (3-Tier Progressive Disclosure)**：将原单体 `SKILL.md` 解耦为「精炼主控骨架 [SKILL.md](SKILL.md) + 按阶段按需加载的四大权威规约手册 `references/*.md`」，显著降低常驻上下文负载并防止长链路 Context Rot：
+  - 新增 [references/context-and-audit.md](references/context-and-audit.md)：涵盖公开契约盘点、动态引用四维雷达（Quad-Radar：反射/DI、序列化、配置字符串、动态导出）、Chesterton's Fence（切斯特顿围栏）Git 考古规程、Brooks 本质复杂性萃取、Parnas 变化维度矩阵与 Ousterhout 浅模块/透传层定量审计及 IEEE 参考文献；
+  - 新增 [references/orthogonal-refactoring.md](references/orthogonal-refactoring.md)：涵盖双阶段帽子（Structural/Pruning Hats，适配自 Fowler Two Hats 单一活动纪律）与两振出局微步回滚状态机、深模块重塑、机制与策略解耦、SSOT 收敛、跨模块向后兼容重导出垫片（Deprecation Shims）、激进剪枝与 Canonical English 语义重铸规范；
+  - 新增 [references/verification-and-delivery.md](references/verification-and-delivery.md)：涵盖 Phase 0 Feathers 特征化测试（Characterization Tests / Golden Master）接缝提取护栏、Phase 5 独立 Verifier Subagent 四门禁盲审（Quad-Gate）清单、防 Goodhart 异化的多维熵减量化指标及标准化《梳理清减交付报告》模板；
+  - 新增 [references/rsi-hook.md](references/rsi-hook.md)：引入横切 Phase 0–5 的跨会话 RSI（Recursive Self-Improvement）自我改进协议，支持规约缺陷旁路捕获与 G0–G4 五道门禁独立核验 PR 回馈。
+- **标准化评测基准集 (`evals/`)**：
+  - 新增 [evals/trigger-evals.json](evals/trigger-evals.json)：27 条正负双向触发评测用例（13 应触发 + 14 近邻不触发，含 TS/JS 技术栈样本与近邻技能负例），精确校准 `description` 路由边界；
+  - 新增 [evals/evals.json](evals/evals.json)：7 大典型工程重构场景（L1 单文件清减、L2 模块内正交重组、L4 无测试遗产代码护栏、L3 跨模块公共契约演进、动态反射防误删、Dry-Run 只读审计、重构与新特性边界）的端到端验收契约集。
+- **知识索引与工作区卫生**：新增 [docs/.agents/knowledge-map.md](docs/.agents/knowledge-map.md) 统一维护全仓知识索引；`.gitignore` 新增 `.temp/` 规则以配合 `.temp/preening-<slug>-lab/` 抗压缩状态落盘。
+
+### Changed
+
+- **流水线升维为六阶段自治演进体系 (`Phase 0` → `Phase 5`)**：
+  - 增设 `Phase 0 · 预检分流与特征化测试护栏` 与 **四级输入分流及爆炸半径矩阵（L1–L4 + Dry-Run）**，彻底解决无测试存量代码盲目重构与跨模块契约断裂风险；Dry-Run 模式全程零写入（特征化护栏延后至正式执行时补建）；
+  - 确立 **重构十条铁律（Iron Laws 1–10）** 与 **双代理对抗核验（Refactorer ↔ Independent Verifier Subagent）**，消除单 Agent 自改自审的确认偏误；Verifier diff 契约对工作区取全量变更（`git diff <baseline_sha>`，不依赖已提交），微步绿灯强制本地 checkpoint 回退锚点；
+  - Frontmatter 升级：补齐 `compatibility` 跨宿主与降级声明，扩展 `description` 显式包含中英双语正向触发词与负向禁用边界，`allowed-tools` 改空格分隔对齐开放标准，同时 100% 保持 `name: preening-substrate` 及与 `ThreeFish-AI/negentropy` routine preset `preening_substrate` 的调用与交付模板（四大板块标题级）兼容性。
+
+### Fixed
+
+- 修复 README 安装命令：symlink 安装统一改用 `ln -sfn`，杜绝重复执行时在仓库内部产生自引用嵌套目录；`.gitignore` 追加 `/preening-substrate` 兜底（详见 [docs/.agents/issue.md](docs/.agents/issue.md)）。
+
+## [1.0.1] - 2026-09-22
+
+### Changed
+
+- **方法论体系升维**：全面确立「先全面梳理，再提炼核心、正交分解」的认知演进法则，将技能从扁平原则升维为标准化 **5 阶段结构性熵减流水线 (5-Phase Execution Pipeline)**：
+  - `Phase 1`: 全面梳理 (Exhaustive Context Mapping)
+  - `Phase 2`: 提炼核心 (Core Distillation & Entropy Audit)
+  - `Phase 3`: 正交分解 (Orthogonal Decomposition)
+  - `Phase 4`: 代码清减与语义规范化 (Pruning & Semantic Normalization)
+  - `Phase 5`: 闭环验证与量化交付 (Verification & Quantified Delivery)
+- **强化道法术规范体系**：确立道（认知心法：上下文质量第一、熵减、演进式设计、二阶思维）、法（架构原则：先全貌后局部、正交分解、单一事实源、交付前验证定式）与术（5 阶段细则）三层结构，补充 Mermaid 执行管线图。
+- **标准化交付模板**：明确结构性演进对比与熵减量化度量表格（LOC 增减、文件变动、优化率）及客观自证核验清单。
+- **文档与元数据同步**：更新 [SKILL.md](SKILL.md) 版本至 `1.0.1`，同步升级 [README.md](README.md) 的工作流描述。
+
+## [1.0.0] - 2026-09-22
+
+### Added
+
+- 自本机用户级 slash command `~/.claude/commands/preening-substrate.md`（2026-05-16 创建）迁出为独立可安装技能：对目标模块执行正交分解、语义规范化与代码清减的结构性熵减方法论。
+- 技能正文零改动迁移（byte-identical）；frontmatter 升级为开放 schema（name / description 含 Use when 触发契约 / license / metadata / allowed-tools）。
