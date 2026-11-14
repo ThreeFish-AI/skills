@@ -19,16 +19,29 @@ linked() { [ -L "$1" ] && [ -f "$1/SKILL.md" ]; }
 new_home() { mkdir -p "$TMP/$1"; echo "$TMP/$1"; }
 # 固定 PATH，只放 install.sh 用到的几个工具，避免本机真实的 gemini 命令影响探测；run_gemini 额外放一个假的 gemini
 TOOLS="$TMP/tools"; mkdir -p "$TOOLS"
-for t in dirname basename readlink mkdir ln; do ln -s "$(command -v "$t")" "$TOOLS/$t"; done
+for t in dirname basename readlink mkdir ln awk sed grep tr head sort comm cut git; do ln -s "$(command -v "$t")" "$TOOLS/$t"; done
 GEMINI_BIN="$TMP/gemini-bin"; mkdir -p "$GEMINI_BIN"
 printf '#!/bin/sh\nexit 0\n' > "$GEMINI_BIN/gemini"; chmod +x "$GEMINI_BIN/gemini"
-# 在给定 HOME 下运行 install.sh，并清掉外部可能带入的目标覆盖
-run() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$TOOLS" "$BASH" "$INSTALL" "$@"; }
-run_gemini() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$GEMINI_BIN:$TOOLS" "$BASH" "$INSTALL" "$@"; }
+
+# 用仓库副本跑测试：registry.txt 换成测试夹具，外部 Skill 检出放在临时目录，不碰本机真实检出
+REPO="$TMP/hub"; mkdir -p "$REPO/scripts"
+cp -R "$ROOT/skills" "$REPO/"; cp "$ROOT/scripts/install.sh" "$ROOT/scripts/registry.sh" "$REPO/scripts/"
+INSTALL="$REPO/scripts/install.sh"
+CO="$TMP/checkouts"; mkdir -p "$CO"
+make_ext() { # make_ext <name> [frontmatter-name]：造一个外部 Skill 检出
+  mkdir -p "$CO/$1"; printf -- '---\nname: %s\ndescription: test skill\n---\n' "${2:-$1}" > "$CO/$1/SKILL.md"
+}
+make_ext ext-alpha; make_ext ext-beta
+printf '# 夹具\next-alpha  owner/ext-alpha\next-beta   owner/ext-beta   # 行尾注释\n' > "$REPO/registry.txt"
+
+# 在给定 HOME 下运行 install.sh，并清掉外部可能带入的目标覆盖；离线运行，不访问远端
+run() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$TOOLS" THREEFISH_SKILLS_CHECKOUT_ROOT="$CO" THREEFISH_SKILLS_OFFLINE=1 "$BASH" "$INSTALL" "$@"; }
+run_gemini() { local h="$1"; shift; env -u THREEFISH_SKILLS_TARGETS HOME="$h" PATH="$GEMINI_BIN:$TOOLS" THREEFISH_SKILLS_CHECKOUT_ROOT="$CO" THREEFISH_SKILLS_OFFLINE=1 "$BASH" "$INSTALL" "$@"; }
 
 skills=()
-for f in "$ROOT"/skills/*/SKILL.md; do skills+=("$(basename "$(dirname "$f")")"); done
+for f in "$REPO"/skills/*/SKILL.md; do skills+=("$(basename "$(dirname "$f")")"); done
 first="${skills[0]}"
+skills+=(ext-alpha ext-beta)
 
 # 1. 只装了 Claude Code：只链它，不创建其他 Agent 的目录，并报告跳过
 H="$(new_home only-claude)"; mkdir -p "$H/.claude"
@@ -109,10 +122,77 @@ check "无 Agent: 未创建任何目录" test -z "$(ls -A "$H")"
 
 # 8. 显式目标：跳过探测，只装到指定目录
 H="$(new_home explicit)"; mkdir -p "$H/.claude"
-rc=0; env HOME="$H" THREEFISH_SKILLS_TARGETS="$H/custom" "$INSTALL" >/dev/null 2>&1 || rc=$?
+rc=0; env HOME="$H" THREEFISH_SKILLS_TARGETS="$H/custom" THREEFISH_SKILLS_CHECKOUT_ROOT="$CO" THREEFISH_SKILLS_OFFLINE=1 "$INSTALL" >/dev/null 2>&1 || rc=$?
 check "显式目标: 退出码 0" test "$rc" -eq 0
 for n in "${skills[@]}"; do check "显式目标: $n 链入 custom" linked "$H/custom/$n"; done
 check "显式目标: 不碰探测到的 .claude/skills" test ! -e "$H/.claude/skills"
+
+# 9. 外部 Skill：链接目标是检出目录的物理路径
+H="$TMP/all-agents"
+check "外部 Skill: ext-alpha 指向检出目录" test "$(cd "$H/.claude/skills/ext-alpha" && pwd -P)" = "$(cd "$CO/ext-alpha" && pwd -P)"
+
+# 10. --dry-run：只打印 would-link，不写盘，退出码 0
+H="$(new_home dry-run)"; mkdir -p "$H/.claude"
+rc=0; out="$(run "$H" --dry-run 2>&1)" || rc=$?
+check "--dry-run: 退出码 0" test "$rc" -eq 0
+check "--dry-run: 报告 would-link" bash -c 'echo "$1" | grep -q "^would-link"' _ "$out"
+check "--dry-run: 不创建 skills 目录" test ! -e "$H/.claude/skills"
+
+# 11. 外部检出缺失：报告 NOT-CLONED 并给出 clone 命令，退出码 1，不自动 clone，其余 Skill 照常链接
+H="$(new_home not-cloned)"; mkdir -p "$H/.claude"
+printf 'ext-alpha owner/ext-alpha\next-gamma owner/ext-gamma\n' > "$REPO/registry.txt"
+rc=0; out="$(run "$H" 2>&1)" || rc=$?
+check "外部未检出: 退出码 1" test "$rc" -eq 1
+check "外部未检出: 报告 NOT-CLONED 与 clone 命令" bash -c 'echo "$1" | grep -q "^NOT-CLONED  ext-gamma.*git clone https://github.com/owner/ext-gamma.git"' _ "$out"
+check "外部未检出: 不自动 clone" test ! -e "$CO/ext-gamma"
+check "外部未检出: 不建悬空链接" test ! -e "$H/.claude/skills/ext-gamma" -a ! -L "$H/.claude/skills/ext-gamma"
+check "外部未检出: 其余 Skill 照常链接" linked "$H/.claude/skills/ext-alpha"
+
+# 12. SKILL.md 的 name 与登记名不符：FAIL，不建链接
+make_ext ext-delta wrong-name
+printf 'ext-delta owner/ext-delta\n' > "$REPO/registry.txt"
+H="$(new_home name-mismatch)"; mkdir -p "$H/.claude"
+rc=0; out="$(run "$H" 2>&1)" || rc=$?
+check "name 不符: 退出码 1" test "$rc" -eq 1
+check "name 不符: 报告 frontmatter name" bash -c 'echo "$1" | grep -q "frontmatter name 为「wrong-name」"' _ "$out"
+check "name 不符: 不建链接" test ! -L "$H/.claude/skills/ext-delta"
+
+# 13. 与本仓 Skill 重名：FAIL
+printf '%s owner/%s\n' "$first" "$first" > "$REPO/registry.txt"
+H="$(new_home duplicate)"; mkdir -p "$H/.claude"
+rc=0; out="$(run "$H" 2>&1)" || rc=$?
+check "重名: 退出码 1" test "$rc" -eq 1
+check "重名: 报告同时出现" bash -c 'echo "$1" | grep -q "同时出现在 skills/ 与 registry.txt"' _ "$out"
+
+# 14. 格式不合规的行：FAIL 并指出行号，合规行照常处理
+printf 'ext-alpha owner/ext-alpha\nBad_Name owner/x\next-beta not-a-repo\next-beta owner/ext-beta extra\n' > "$REPO/registry.txt"
+H="$(new_home malformed)"; mkdir -p "$H/.claude"
+rc=0; out="$(run "$H" 2>&1)" || rc=$?
+check "格式不合规: 退出码 1" test "$rc" -eq 1
+check "格式不合规: 报告非法名的行号" bash -c 'echo "$1" | grep -q "registry.txt:2:"' _ "$out"
+check "格式不合规: 报告非法仓库的行号" bash -c 'echo "$1" | grep -q "registry.txt:3:"' _ "$out"
+check "格式不合规: 报告多余列的行号" bash -c 'echo "$1" | grep -q "registry.txt:4:"' _ "$out"
+check "格式不合规: 合规行照常链接" linked "$H/.claude/skills/ext-alpha"
+
+# 15. --check 与 rsi 注册表对账：两侧差集只提示（note），不改退出码
+printf 'ext-alpha owner/ext-alpha\next-beta owner/ext-beta\n' > "$REPO/registry.txt"
+mkdir -p "$CO/rsi/repos"; for n in ext-alpha agents ext-omega; do echo "default_branch: main" > "$CO/rsi/repos/$n.md"; done
+H="$TMP/all-agents"
+rc=0; out="$(run "$H" --check 2>&1)" || rc=$?
+check "rsi 对账: 退出码仍为 0" test "$rc" -eq 0
+check "rsi 对账: 提示仅在 registry 的 ext-beta" bash -c 'echo "$1" | grep -q "^note      ext-beta：在 registry.txt 登记"' _ "$out"
+check "rsi 对账: 提示仅在 rsi 的 ext-omega" bash -c 'echo "$1" | grep -q "^note      ext-omega：rsi 注册表有"' _ "$out"
+check "rsi 对账: agents（规范仓）不计入" bash -c '! echo "$1" | grep -q "note      agents："' _ "$out"
+rm -rf "$CO/rsi"
+
+# 16. --check 检出状态：不在默认分支、有未提交改动只提示，不改退出码
+git -C "$CO/ext-alpha" init -q -b main && git -C "$CO/ext-alpha" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m init
+git -C "$CO/ext-alpha" update-ref refs/remotes/origin/main HEAD && git -C "$CO/ext-alpha" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+git -C "$CO/ext-alpha" switch -q -c topic; echo dirty > "$CO/ext-alpha/dirty.txt"
+rc=0; out="$(run "$H" --check 2>&1)" || rc=$?
+check "检出状态: 退出码仍为 0" test "$rc" -eq 0
+check "检出状态: 提示不在默认分支" bash -c 'echo "$1" | grep -q "^note      ext-alpha：检出在 topic，不在默认分支 main"' _ "$out"
+check "检出状态: 提示未提交改动" bash -c 'echo "$1" | grep -q "^note      ext-alpha：检出有未提交改动"' _ "$out"
 
 [ "$fail" -eq 0 ] && echo "ok  install.sh 全部用例通过"
 exit "$fail"
