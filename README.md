@@ -12,11 +12,11 @@ ThreeFish-AI 自研 Agent Skills 的统一入口，遵循 [Agent Skills 规范](
 | [`vibe-video`](https://github.com/ThreeFish-AI/vibe-video) | 独立仓 | 把论文、文档、代码库或精读产物做成动效图解科普视频的十阶段流水线 | macOS、`uv`、`pnpm`、Node.js；运行时依赖 `vibe-tts` |
 | [`vibe-tts`](https://github.com/ThreeFish-AI/vibe-tts) | 独立仓 | 把一段文字配成 `.mp3`：edge 预置音色或本地 IndexTTS 声音克隆 | `uv`、联网；克隆引擎另需 macOS 与本地服务 |
 | [`vibe-stock`](https://github.com/ThreeFish-AI/vibe-stock) | 独立仓 | A 股、港股诊股与决策报告流水线，含后验自校准与盯盘 | `uv`；联网模式需 PyPI 可达 |
-| [`preening-substrate`](https://github.com/ThreeFish-AI/preening-substrate) | 独立仓 | 对代码模块做结构性重构与熵减：正交分解、死代码清减、命名规范化与对抗核验 | `git`、目标项目测试工具链 |
+| [`preening-substrate`](./skills/preening-substrate/SKILL.md) | 本仓 | 对代码模块做结构性重构与熵减：正交分解、死代码清减、命名规范化与对抗核验 | `git`、目标项目测试工具链 |
 | [`review-once`](https://github.com/ThreeFish-AI/review-once) | 独立仓 | 有界、循证的 review-fix 收敛循环，仅在显式点名时触发 | `git` |
 | [`rsi`](https://github.com/ThreeFish-AI/rsi) | 独立仓 | 统一 RSI 经验沉淀回路：把上述 Skill 与规约自身的缺陷经门禁核验后以 PR 回流对应仓库 | `git`、`gh` |
 
-独立仓 Skill 的默认分支、RSI 回流路由等以 [ThreeFish-AI/rsi](https://github.com/ThreeFish-AI/rsi) 的注册表为准，本仓不重复登记；`scripts/install.sh --check` 会核对 `registry.txt` 与 rsi 注册表的 Skill 集合是否一致。
+独立仓 Skill 的默认分支、RSI 回流路由等以 [ThreeFish-AI/rsi](https://github.com/ThreeFish-AI/rsi) 的注册表为准（`preening-substrate` 已迁入本仓 `skills/` 下，历史经 git-filter-repo 完整保留，旧仓 ThreeFish-AI/preening-substrate 归档只读），本仓不重复登记；`scripts/install.sh --check` 会核对 `registry.txt` 与 rsi 注册表的 Skill 集合是否一致。
 
 ## 安装
 
