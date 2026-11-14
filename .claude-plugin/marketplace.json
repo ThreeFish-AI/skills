@@ -1,0 +1,97 @@
+{
+  "name": "threefish-skills",
+  "description": "ThreeFish-AI 自研 Agent Skills：每个 Skill 一个 plugin，本仓 Skill 与独立 Skill 仓统一从这里安装",
+  "owner": {
+    "name": "ThreeFish-AI",
+    "url": "https://github.com/ThreeFish-AI"
+  },
+  "plugins": [
+    {
+      "name": "commit",
+      "description": "向 Git 提交工作区变更并推送：先 git pull 同步当前分支，再按内容类别分批、以「type(Topic): 中文摘要;」格式提交，最后 git push（用户明确要求不推送时只提交）。用户要求提交、commit、提交并推送，或任务进入可提交阶段时使用。不用于创建 PR（用 pr-feature）、改写已有提交（amend、rebase、force-push）或直接向 master/main 推送。Use when asked to commit and push changes, or to commit without pushing.",
+      "source": "./skills/commit"
+    },
+    {
+      "name": "pr-feature",
+      "description": "基于 origin/feature/1.x.x（用户可指定其他基线）为当前分支创建新 PR 并处理与基线的冲突：PR 标题与正文用中文，标题遵循 AGENTS.md 的 PR Title Convention，在 Orca 环境内创建后挂载到 workspace。仅在用户明确要求创建 PR 时使用；不用于提交代码（用 commit）、合并或关闭 PR。Use only when the user explicitly asks to open a PR against the feature base branch.",
+      "source": "./skills/pr-feature"
+    },
+    {
+      "name": "guided-learn",
+      "description": "通读论文（arXiv 等）、技术文档与设计规格、网页、视频或代码库等一手材料的全部内容（可由用户提供，或指名后自主定位），必要时自主补读其最新权威信源，再以自己的话写成外行也能一读就懂、一看就会、一听便知、一学就通的《精读与通俗拆解》：先梳理全貌再总结，讲透底层规律、权衡取舍与核心争议，用最小原型与破坏性实验验证机制，由内置外行读者代理 Subagent 验收、不达标即修文档，端到端自治交付；映射到用户代码库仅在明确要求时产出。当用户要求「带我精读论文/资料」「先梳理全貌不要急着总结」「提炼该领域核心规律与争议」「以老师身份带我掌握 X」「搞懂原理并动手做实验」时使用；即使未明说「精读」，只要用户提供或指名一手材料并希望深入掌握、接受考核或动手验证，也应使用。不用于快速摘要、TL;DR 或以 cheatsheet、对比表等汇总产物为目标的材料梳理、全文翻译、单点 API 查询、日常 Bug 排查与代码评审、无可定位一手信源的对话式概念讲解与事实核查，或把材料转成视频、skill 等其他产物。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/guided-learn"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "vibe-video",
+      "description": "把论文、技术文档、代码仓库、课程站点或 guided-learn 精读产物（精读与通俗拆解文档）等信源做成动效图解科普视频（animated explainer video）的十阶段流水线：信源精读取证、策划、逐字稿（单一事实源）、真实性与易懂性校验、成文优化（把 AI 稿改得像人写、适合人读人听）、分镜、声音克隆或预置音色配音（TTS）、Remotion 代码动画、抽帧 QA、终渲字幕与交付归档，支持中英双语版本。Use when 用户想把一篇论文、文档、代码或已有的精读拆解文档讲成视频，制作或迭代科普解说视频（改稿后重配音、重渲染），初始化视频工作区或新建一集，编写或润色 narration.md / storyboard.md，跑配音、渲染、抽帧质检或交付归档，或询问这套流水线的用法——即使没有点名 vibe-video。不用于剪辑或转码已有视频、通用产品宣传片、幻灯片、单独绘制架构图，或不产出视频的论文精读。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/vibe-video"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "vibe-tts",
+      "description": "把一段文字配成 .mp3 配音：输入要配音的内容和配音风格，选 edge（微软预置音色，联网免密钥）或 index-tts 2.5（本地声音克隆，story 等段落演绎风格），产出 mp3 到环境变量 VIBE_TTS_OUTPUT_DIR 指定的统一目录；index-tts 按需自动拉起并在空闲后收尾。Use when 用户要把一句话或一段稿子转成语音文件、给文字配音、用本人克隆声音朗读、指定 story 或其他风格出声、起停或体检本地 IndexTTS 服务，或询问配音引擎与风格怎么选——即使没有点名 vibe-tts。不用于整集视频制作流水线（走 vibe-video）、剪辑转码已有音频、语音识别转写、通用音乐音效生成，或与配音无关的文本改写。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/vibe-tts"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "vibe-stock",
+      "description": "给一只 A 股或港股做全面诊股并产出专业决策报告的五段流水线：多源取证据（八态标注+回退链+熔断）、有界证据包（质量分+置信帽+不可信哨兵）、三角色+十五策略双轨出意见（十短线 default + 五中线 position）、十五扩展情报块（资金流/公告/研报/预告/解禁/股东户数/大盘/行业/估值/两融/指数基准/全A换手分位/ERP/两融账户参与度/汇率，零权重纯情报面；后六者中五块为市场级共享数据）、确定性裁决（信号资格分选、分歧显式化、RiskGuard 只降不升）、决策报告与信号登记，并支持双轨后验自校准（短线 T+1/3/5/10 ±2% 带、中线 profile=position T+20/60/120 σ√h 带仅 T+60 记分，绩效因子按轨分台账；港股可附人民币口径展示）、在册股短/中期走势参考卡（数学×情绪×经验三面零权重：σ√h 预测带+触及概率、个股/市场级情绪、每股信号后验计数与日差连向、实盘股操作复盘脱敏锚；收盘批量出全集日表+诊股 prepare 现算注入 pack 与报告 4c 节，参考非信号；持仓股另有加仓决策轨（10：三道门资格冻结/策略买点触发/三段确认制手数，报告持仓者五档 + addon 信号进后验记分）。Use when 用户说「诊断/诊股/分析一下 600519 / 看看hk00700 / 给我出这只票的报告 / 复盘上次建议对不对 / 这只持仓该不该加仓 / 给这只票做高抛低吸预案」等个股分析诉求——即使未点名 vibe-stock；多股批量扫描/指数成分精选/组合资金配置（如「对沪深300 成分股批量诊断、筛选 N 只配置资金」）走 references/06-batch-scan.md 批量子技能；在册股票盘中盯盘/本地告警/收盘复核走 references/07-monitor.md 盯盘子技能（本地事实告警+事件级「××复核」短语、机械判据族与收盘操作复核，禁止第三方推送通道，不执行任何交易）。不用于回测引擎、自动交易。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/vibe-stock"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "preening-substrate",
+      "description": "对目标代码模块或子系统执行「预检护栏 → 全面梳理 → 核心提炼 → 正交分解 → 代码清减与语义规范化 → 对抗核验与量化交付」的结构性重构与系统性熵减：先锚定测试基线与全局依赖拓扑，剥离偶然复杂性并识别正交变化维度（机制 vs. 策略），重塑深模块与单一事实源（SSOT），再激进剪除死代码、内联浅透传层、重铸精准领域命名（保留标准英文技术术语），最后由独立 Verifier Subagent 盲审行为等价性与二阶涟漪效应并交付量化报告。当用户要求「全面梳理并提炼核心、正交分解」「梳理 / 清减某个模块」「对 X 做正交分解」「消除死代码与过度抽象」「拍平透传层与浅模块」「规范化命名语义与职责边界」「执行结构性熵减」或由 negentropy 的 preening_substrate 预设按名调用时使用。Use when the user asks to refactor, decompose or prune a module, eliminate dead code, or flatten pass-through layers. 不用于全新业务特性开发、单点紧急 Bug 热修（Hotfix）、纯代码格式化或 Linter 自动修复、跨语言推倒重写、无源码黑盒调优，或仅需只读代码评审与架构答疑的场景。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/preening-substrate"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "review-once",
+      "description": "Run this bounded, evidence-driven review-fix loop ONLY when the user explicitly invokes this skill — /review-once, $review-once, or names review-once as the tool to run (\"use review-once to review the changes\") — asks for an iterative review-fix loop (review, fix, review again until no clear defects remain), or files an RSI sedimentation request. Do NOT trigger for plain review requests — \"review this PR\", \"review the changes\", or a single \"review and fix\" with no iteration wording; handle those with a normal one-pass review (you may mention /review-once for the full loop). A bare mention in a question or complaint is not an invocation; plain-English \"review once\" (\"just review once and fix\") is not a name mention. Do not trigger for code explanations, test-only requests, security audits without an iteration loop, or release/merge automation. When triggered: read Review request.md as the standard, fix actionable findings, verify, and loop; prefer Conductor Diff/Comments tools, else git merge-base/diff.",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/review-once"
+      },
+      "skills": [
+        "./"
+      ]
+    },
+    {
+      "name": "rsi",
+      "description": "统一 RSI（Recursive Self-Improvement）经验沉淀回路：在使用 ThreeFish-AI 自研 skill 与规范体系（preening-substrate、guided-learn、vibe-video、vibe-tts、review-once、agents.md 协作规约、rsi 自身）的过程中，把发现的 Skill/规范自身缺陷或可沉淀的改进经验，经登记 ledger、隔离 clone、G0–G4 门禁核验后，以 PR 形式回流对应维护仓库，并在 PR 后自动做上下文审阅与摘要。当用户指出上述某个 skill 的缺陷或提出改进建议、要求把经验沉淀成 PR、登记 RSI 条目、走自改进回路，或 Agent 运行时发现门禁无法判定、规约自相矛盾、死链/锚点失效、模板缺位、宿主能力不符且无降级路径等运行时证据时使用。不用于目标业务仓库自身的代码缺陷（属作业对象）、一次性代码 review、一般 Git 操作，或与注册仓库无关的经验总结。",
+      "source": {
+        "source": "github",
+        "repo": "ThreeFish-AI/rsi"
+      },
+      "skills": [
+        "./"
+      ]
+    }
+  ]
+}
