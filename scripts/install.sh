@@ -186,8 +186,17 @@ if [ "$MODE" = "check" ]; then
   # rsi 注册表对账：registry.txt 的外部 Skill 应与 rsi 的 repos/*.md 一一对应（agents.md 是规范仓、不是 Skill，不计入）
   RSI_REPOS="$CO_ROOT/rsi/repos"
   if [ -d "$RSI_REPOS" ]; then
-    reg_names="$(printf '%s\n' "$reg_out" | awk 'NF {print $1}' | sort)"
-    rsi_names="$(cd "$RSI_REPOS" && for f in *.md; do [ -e "$f" ] && basename "$f" .md; done | grep -vx 'agents' | sort || true)"
+    # skill_path 非 . 的档案是 monorepo 承载形态（Skill 随其上游仓安装，如本仓 skills/）：两侧对账都跳过
+    mono_names="$(cd "$RSI_REPOS" && for f in *.md; do
+      [ -e "$f" ] && grep -qE '^skill_path:[[:space:]]*[^.]' "$f" && basename "$f" .md
+    done | sort || true)"
+    reg_names="$(printf '%s\n' "$reg_out" | awk 'NF {print $1}' | sort | grep -vxF -f <(printf '%s\n' "$mono_names") || true)"
+    rsi_names="$(cd "$RSI_REPOS" && for f in *.md; do
+      [ -e "$f" ] || continue
+      n="$(basename "$f" .md)"
+      [ "$n" = "agents" ] && continue  # agents.md 是规范仓（agents.md 协作规约）、不是 Skill
+      printf '%s\n' "$n"
+    done | sort | grep -vxF -f <(printf '%s\n' "$mono_names") || true)"
     comm -23 <(printf '%s\n' "$reg_names") <(printf '%s\n' "$rsi_names") | while IFS= read -r n; do
       [ -n "$n" ] || continue
       echo "note      ${n}：在 registry.txt 登记，rsi 注册表没有对应的 repos/${n}.md（不走 RSI 回流）"

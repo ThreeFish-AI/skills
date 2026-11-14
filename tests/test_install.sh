@@ -183,6 +183,9 @@ check "rsi 对账: 退出码仍为 0" test "$rc" -eq 0
 check "rsi 对账: 提示仅在 registry 的 ext-beta" bash -c 'echo "$1" | grep -q "^note      ext-beta：在 registry.txt 登记"' _ "$out"
 check "rsi 对账: 提示仅在 rsi 的 ext-omega" bash -c 'echo "$1" | grep -q "^note      ext-omega：rsi 注册表有"' _ "$out"
 check "rsi 对账: agents（规范仓）不计入" bash -c '! echo "$1" | grep -q "note      agents："' _ "$out"
+echo "skill_path: skills/ext-alpha" > "$CO/rsi/repos/ext-alpha.md"
+rc=0; out2="$(run "$H" --check 2>&1)" || rc=$?
+check "rsi 对账: skill_path≠. 的档案不再要求登记 registry" bash -c '! echo "$1" | grep -q "note      ext-alpha"' _ "$out2"
 rm -rf "$CO/rsi"
 
 # 16. --check 检出状态：不在默认分支、有未提交改动只提示，不改退出码
