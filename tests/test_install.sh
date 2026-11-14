@@ -194,5 +194,19 @@ check "检出状态: 退出码仍为 0" test "$rc" -eq 0
 check "检出状态: 提示不在默认分支" bash -c 'echo "$1" | grep -q "^note      ext-alpha：检出在 topic，不在默认分支 main"' _ "$out"
 check "检出状态: 提示未提交改动" bash -c 'echo "$1" | grep -q "^note      ext-alpha：检出有未提交改动"' _ "$out"
 
+
+# 17. --relink：改写悬空与旧外部检出路径的链接；他处链接与真实目录不动
+printf 'ext-beta owner/ext-beta\n' > "$REPO/registry.txt"
+mkdir -p "$REPO/skills/ext-alpha"; printf -- '---\nname: ext-alpha\ndescription: x\n---\n' > "$REPO/skills/ext-alpha/SKILL.md"
+H="$(new_home relink)"; mkdir -p "$H/.claude/skills" "$CO/elsewhere3"
+ln -s "$CO/ext-alpha" "$H/.claude/skills/ext-alpha"           # 旧外部检出路径（该 Skill 已迁入本仓）
+ln -s "$CO/ext-beta-gone" "$H/.claude/skills/ext-beta"        # 悬空
+ln -s "$CO/elsewhere3" "$H/.claude/skills/${skills[0]}"       # 他处链接（本仓 skill 名）
+rc=0; out="$(run "$H" --relink 2>&1)" || rc=$?
+check "--relink: 旧外部检出路径链接改写到本仓源" bash -c '[ "$(cd "$1/.claude/skills/ext-alpha" && pwd -P)" = "$2" ]' _ "$H" "$(cd "$REPO/skills/ext-alpha" && pwd -P)"
+check "--relink: 悬空链接改写到当前源" bash -c '[ "$(cd "$1/.claude/skills/ext-beta" && pwd -P)" = "$2" ]' _ "$H" "$(cd "$CO/ext-beta" && pwd -P)"
+check "--relink: 他处链接报 CONFLICT 且未动" bash -c 'echo "$1" | grep -q "^CONFLICT.*-> $2/elsewhere3"' _ "$out" "$CO"
+check "--relink: 报告 relinked" bash -c 'echo "$1" | grep -q "^relinked"' _ "$out"
+check "--relink: 退出码 1（存在 CONFLICT）" test "$rc" -eq 1
 [ "$fail" -eq 0 ] && echo "ok  install.sh 全部用例通过"
 exit "$fail"
