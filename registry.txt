@@ -1,0 +1,16 @@
+# 外部 Skill 仓登记表：在本仓之外独立维护的 Skill，由 scripts/install.sh 与本仓 skills/ 下的 Skill 一起装到本机全部已检测到的 Agent。
+# 本仓 skills/<name>/ 下的 Skill 自动发现，不在此登记。
+#
+# 每行两列，以空白分隔，# 开头为注释：
+#   name  Skill 名：等于仓库名、SKILL.md frontmatter 的 name，也是各 Agent 目录下的链接名
+#   repo  GitHub 仓库（owner/repo）；本机检出目录为 <本仓父目录>/<name>，可用 THREEFISH_SKILLS_CHECKOUT_ROOT 改父目录
+#
+# 默认分支、RSI 回流路由等字段只在 ThreeFish-AI/rsi 的 repos/*.md 维护，这里不重复登记；scripts/install.sh --check 会核对两边的 Skill 集合。
+
+guided-learn        ThreeFish-AI/guided-learn
+vibe-video          ThreeFish-AI/vibe-video
+vibe-tts            ThreeFish-AI/vibe-tts
+vibe-stock          ThreeFish-AI/vibe-stock
+preening-substrate  ThreeFish-AI/preening-substrate
+review-once         ThreeFish-AI/review-once
+rsi                 ThreeFish-AI/rsi
