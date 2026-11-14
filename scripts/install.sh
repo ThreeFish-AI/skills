@@ -4,6 +4,7 @@
 # 用法：scripts/install.sh [--check | --dry-run]
 #   --check    只核对不改动：缺链、冲突、外部检出缺失或 SKILL.md name 不符时退出码为 1；另报告检出状态与 rsi 注册表对账（只提示）
 #   --dry-run  只打印将要新建的链接与冲突，不写盘
+#   --relink   在安装基础上，把悬空或仍指向该 Skill 旧外部检出路径（<检出父目录>/<name>）的软链接改写到当前源；真实目录与他处链接仍报 CONFLICT 不动
 # 探测已安装的 Agent，未安装的跳过，且不创建其目录（Gemini CLI 看 gemini 命令是否在 PATH 上，其余看根目录是否存在）：
 #   Claude Code   ~/.claude                                  -> ~/.claude/skills
 #   Codex 与通用   ~/.codex 或 ~/.agents                      -> ~/.agents/skills
@@ -23,7 +24,8 @@ case "${1:-}" in
   "") ;;
   --check) MODE="check" ;;
   --dry-run) MODE="dry-run" ;;
-  *) echo "usage: $0 [--check | --dry-run]" >&2; exit 2 ;;
+  --relink) MODE="relink" ;;
+  *) echo "usage: $0 [--check | --dry-run | --relink]" >&2; exit 2 ;;
 esac
 
 TARGETS=()
@@ -103,8 +105,14 @@ while [ "$i" -lt "$SK_COUNT" ]; do
       for target in "${TARGETS[@]}"; do
         dest="$target/$name"
         if [ -L "$dest" ]; then
-          if [ "$(cd "$dest" 2>/dev/null && pwd -P)" = "$src" ]; then
+          cur="$(cd "$dest" 2>/dev/null && pwd -P || true)"
+          if [ "$cur" = "$src" ]; then
             echo "ok        $dest"
+          elif [ "$MODE" = "relink" ] && { [ -z "$cur" ] || [ "$cur" = "$CO_ROOT/$name" ]; }; then
+            # --relink 只改写两类链接：悬空链接，或仍指向该 Skill 旧的外部检出路径（迁入本仓后由 registry.txt 移除）的链接；真实目录与他处链接一律不碰
+            old="$(readlink "$dest")"
+            ln -sfn "$src" "$dest"
+            echo "relinked  $dest -> ${src}（原 ${old}）"
           else
             echo "CONFLICT  $dest -> $(readlink "$dest")（已指向别处，未改动）"
             bad=1
