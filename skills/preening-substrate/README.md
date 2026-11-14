@@ -14,12 +14,12 @@
 
 ## 安装
 
-本技能遵循 [Agent Skills 开放标准](https://agentskills.io/specification)，兼容 Claude Code、Antigravity IDE 等所有支持 `SKILL.md` 的 Agent Harness，差异仅在技能目录：
+本技能遵循 [Agent Skills 开放标准](https://agentskills.io/specification)，兼容 Claude Code、Antigravity 等所有支持 `SKILL.md` 的 Agent Harness，差异仅在技能目录：
 
 | 宿主 | 全局技能目录 | 工作区级技能目录 |
 | :--- | :--- | :--- |
 | Claude Code | `~/.claude/skills/` | `<repo>/.claude/skills/` |
-| Antigravity IDE | `~/.gemini/config/skills/` | `<workspace>/.agents/skills/` |
+| Antigravity | `~/.gemini/config/skills/` | `<workspace>/.agents/skills/` |
 | 其他遵循跨客户端约定的宿主 | `~/.agents/skills/` | `<repo>/.agents/skills/` |
 
 ```bash
@@ -35,7 +35,7 @@ ln -sfn ~/projects/preening-substrate ~/.gemini/config/skills/preening-substrate
 
 > 技能清单在会话开始时扫描，安装后须重启 Agent 会话方可被发现。也可用 [vercel-labs/skills](https://github.com/vercel-labs/skills) CLI 安装：`npx skills add ThreeFish-AI/preening-substrate`。
 >
-> 注：Antigravity 能识别 `~/.gemini/config/skills/` 下的 symlink 技能（Antigravity 应用 2.32.1 实测；IDE 与 CLI 的公开旁证见 #2566 Evidence 节），方式二对该宿主同样适用。[vercel-labs/skills#633](https://github.com/vercel-labs/skills/issues/633) 报告的不识别发生在旧路径 `~/.gemini/antigravity/skills/`，已于 2026-11-06 关闭。skills CLI 随 [#2566](https://github.com/vercel-labs/skills/pull/2566) 改为把 Antigravity 全局技能装进 `~/.gemini/config/skills/`。
+> 注：Antigravity 能识别 `~/.gemini/config/skills/` 下的 symlink 技能（Antigravity 应用 2.32.1 实测；agy CLI 的公开旁证见 #2566 Evidence 节），方式二对该宿主同样适用。[vercel-labs/skills#633](https://github.com/vercel-labs/skills/issues/633) 报告的不识别发生在旧路径 `~/.gemini/antigravity/skills/`，已于 2026-11-06 关闭。skills CLI 随 [#2566](https://github.com/vercel-labs/skills/pull/2566) 改为把 Antigravity 全局技能装进 `~/.gemini/config/skills/`。
 
 ---
 
